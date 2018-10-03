@@ -1,25 +1,30 @@
-FROM microsoft/dotnet:latest
-WORKDIR ./app
+FROM microsoft/dotnet:2.1-sdk-stretch AS build
+WORKDIR /app
 
-COPY Cierge .
+# copy csproj and restore as distinct layers
+COPY Cierge/*.csproj ./cierge/
+WORKDIR /app/cierge
+RUN dotnet restore
 
-#COPY demo_rsa_signing_key_json /run/secrets/
+# copy and build app and libraries
+WORKDIR /app/
+COPY cierge/. ./cierge/
+WORKDIR /app/cierge
+# add IL Linker package
+RUN dotnet add package ILLink.Tasks -v 0.1.5-preview-1841731 -s https://dotnet.myget.org/F/dotnet-core/api/v3/index.json
+RUN dotnet publish -c Release -r linux-x64 -o out /p:ShowLinkerSizeComparison=true
 
-# BUILD LINES
+# test application -- see: dotnet-docker-unit-testing.md
+#FROM build AS testrunner
+#WORKDIR /app/tests
+#COPY tests/. .
+#ENTRYPOINT ["dotnet", "test", "--logger:trx"]
+
+FROM microsoft/dotnet:2.1-runtime-deps-stretch-slim AS runtime
+WORKDIR /app
+COPY --from=build /app/cierge/out ./
+COPY rsa_signing_key.json /run/secrets/
 ENV ASPNETCORE_ENVIRONMENT Production
+EXPOSE 5000
 
-
-COPY ./entrypoint.sh .
-RUN sed -i.bak 's/\r$//' ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
-CMD /bin/bash ./entrypoint.sh
-
-#CMD "dotnet run --server.urls=https://localhost:$PORT --no-launch-profile"
-
-#ENTRYPOINT  ["dotnet", "cierge.dll", "server.urls=https://localhost:$PORT", "no-launch-profile"]
-
-# To deply to heroku, run the following command in this directory (may have to log in first):
-#	heroku container:push web --app cierge
-
-# To test:
-#	docker build -t cierge .; docker run cierge
+ENTRYPOINT ["./cierge"]
