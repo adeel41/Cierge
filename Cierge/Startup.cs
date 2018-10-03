@@ -17,6 +17,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using Cierge.Options;
 using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Cierge
@@ -168,6 +169,9 @@ namespace Cierge
             {
                 options.Cookie.SameSite = SameSiteMode.None;
             });
+
+            services.Configure<ClaimsOptions>(Configuration.GetSection("Cierge"));
+            services.AddTransient<ICustomClaimsUpdater, CustomClaimsUpdater>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)

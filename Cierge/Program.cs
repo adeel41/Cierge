@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cierge.Data;
+using Cierge.Services;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -82,6 +83,8 @@ namespace Cierge
                         await roleManager.CreateAsync(new IdentityRole(roleName));
                     }
                 }
+
+                await scope.ServiceProvider.GetRequiredService<ICustomClaimsUpdater>().UpdateAll();
             }
         }
         

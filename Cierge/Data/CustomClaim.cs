@@ -11,6 +11,8 @@ namespace Cierge.Data
         public string Caption { get; set; }
         public string Name { get; set; }
         public string Url { get; set; }
+
+        public void SetValue(Delegate propertySetter, object value) => propertySetter.DynamicInvoke(this, value);
     }
 
     public class UserCustomClaim
