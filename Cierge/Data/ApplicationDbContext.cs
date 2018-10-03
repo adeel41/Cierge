@@ -7,6 +7,7 @@ namespace Cierge.Data
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public DbSet<AuthEvent> AuthEvents { get; set; }
+        public DbSet<CustomClaim> CustomClaims { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -29,6 +30,19 @@ namespace Cierge.Data
                 .WithMany(u => u.Events)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CustomClaim>().ToTable("CustomClaims");
+
+            var userCustomClaimEntity = builder.Entity<UserCustomClaim>().ToTable("UserCustomClaims");
+            userCustomClaimEntity.HasKey(x => new {x.UserId, x.CustomClaimId});
+            userCustomClaimEntity
+                .HasOne(x => x.User)
+                .WithMany(x => x.CustomClaims)
+                .HasForeignKey(x => x.UserId);
+            userCustomClaimEntity
+                .HasOne(x => x.CustomClaim)
+                .WithMany()
+                .HasForeignKey(x => x.CustomClaimId);
         }
     }
 }
