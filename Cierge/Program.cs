@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenIddict.Core;
@@ -45,6 +46,7 @@ namespace Cierge
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
+                .ConfigureAppConfiguration((context, config) => config.AddUserSecrets("aspnet-PwdLess-FFAEA828-6DB7-405C-8E94-8A5EB7C69E53"))
                 .Build();
 
 
