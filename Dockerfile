@@ -20,6 +20,7 @@ COPY rsa_signing_key.json /run/secrets/
 COPY cierge.appsettings.json appsettings.json
 
 ENV ASPNETCORE_ENVIRONMENT Production
+ENV ASPNETCORE_URLS "http://*:5000"
 EXPOSE 5000
 
 ENTRYPOINT ["dotnet", "Cierge.dll"]
