@@ -1,0 +1,56 @@
+version: '3.3'
+
+volumes:
+  pgdata:
+    driver: local
+
+secrets:
+  pg_pwd_file:
+    file: ~/files/postgres/pg_pwd_file.txt
+  pg_user_file:
+    file: ~/files/postgres/pg_user_file.txt
+  cierge_fullchain.pem:
+    file: ~/files/cierge_nginx/fullchain.pem
+  cierge_privkey.pem:
+    file: ~/files/cierge_nginx/privkey.pem
+  cierge_rsa_signing_key.json:
+    file: ~/files/cierge/rsa_signing_key.json
+
+services:
+  cierge:
+    build:
+      context:  .
+      dockerfile: Dockerfile
+    expose:
+      - 5000
+    secrets:
+      - cierge_rsa_signing_key.json
+    volumes:
+      - ~/files/cierge/appsettings.json:/app/appsettings.json
+    depends_on:
+      - db
+  db:
+    image: postgres:11
+    environment:
+      POSTGRES_DB: cierge
+      POSTGRES_USER_FILE: /run/secrets/pg_user_file
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pwd_file
+      POSTGRES_INITDB_ARGS: --data-checksums
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    secrets:
+      - pg_user_file
+      - pg_pwd_file
+  nginx:
+    image: nginx:1.15
+    volumes:
+      - ~/Cierge/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+      - 443:443
+    links:
+      - cierge
+    secrets:
+      - cierge_fullchain.pem
+      - cierge_privkey.pem

@@ -1,25 +1,26 @@
-FROM microsoft/dotnet:latest
-WORKDIR ./app
+FROM microsoft/dotnet:2.1-sdk AS build
+WORKDIR /app
 
-COPY Cierge .
+# copy csproj and restore as distinct layers
+COPY Cierge/*.csproj ./cierge/
+WORKDIR /app/cierge
+RUN dotnet restore
 
-#COPY demo_rsa_signing_key_json /run/secrets/
+# copy and build app and libraries
+WORKDIR /app/
+COPY Cierge/. ./cierge/
+WORKDIR /app/cierge
 
-# BUILD LINES
+RUN dotnet publish -c Release --output /out/
+
+FROM microsoft/dotnet:2.1-aspnetcore-runtime AS runtime
+WORKDIR /app
+COPY --from=build /out .
+#COPY rsa_signing_key.json /run/secrets/
+#COPY cierge.appsettings.json appsettings.json
+
 ENV ASPNETCORE_ENVIRONMENT Production
+ENV ASPNETCORE_URLS "http://*:5000"
+EXPOSE 5000
 
-
-COPY ./entrypoint.sh .
-RUN sed -i.bak 's/\r$//' ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
-CMD /bin/bash ./entrypoint.sh
-
-#CMD "dotnet run --server.urls=https://localhost:$PORT --no-launch-profile"
-
-#ENTRYPOINT  ["dotnet", "cierge.dll", "server.urls=https://localhost:$PORT", "no-launch-profile"]
-
-# To deply to heroku, run the following command in this directory (may have to log in first):
-#	heroku container:push web --app cierge
-
-# To test:
-#	docker build -t cierge .; docker run cierge
+ENTRYPOINT ["dotnet", "Cierge.dll"]

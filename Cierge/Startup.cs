@@ -17,6 +17,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Cierge
 {
@@ -185,7 +186,10 @@ namespace Cierge
             app.UseCors("AllowSpecificOrigin");
 
             app.UseStaticFiles();
-
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.All
+            });
             app.UseAuthentication();
 
             app.UseMvc(routes =>
@@ -205,7 +209,7 @@ namespace Cierge
             {
                 // Get RSA JSON from file
                 string jsonString;
-                FileStream fileStream = new FileStream(path, FileMode.Open);
+                FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
                 using (StreamReader reader = new StreamReader(fileStream))
                 {
                     jsonString = reader.ReadToEnd();
