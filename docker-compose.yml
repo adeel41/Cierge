@@ -26,7 +26,7 @@ services:
     secrets:
       - cierge_rsa_signing_key.json
     volumes:
-      - ~/files/cierge/appsettings.json:/app/cierge/appsettings.json
+      - ~/files/cierge/appsettings.json:/app/appsettings.json
     depends_on:
       - db
   db:
