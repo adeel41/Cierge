@@ -16,8 +16,8 @@ RUN dotnet publish -c Release --output /out/
 FROM microsoft/dotnet:2.1-aspnetcore-runtime AS runtime
 WORKDIR /app
 COPY --from=build /out .
-COPY rsa_signing_key.json /run/secrets/
-COPY cierge.appsettings.json appsettings.json
+#COPY rsa_signing_key.json /run/secrets/
+#COPY cierge.appsettings.json appsettings.json
 
 ENV ASPNETCORE_ENVIRONMENT Production
 ENV ASPNETCORE_URLS "http://*:5000"

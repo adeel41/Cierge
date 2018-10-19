@@ -209,7 +209,7 @@ namespace Cierge
             {
                 // Get RSA JSON from file
                 string jsonString;
-                FileStream fileStream = new FileStream(path, FileMode.Open);
+                FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
                 using (StreamReader reader = new StreamReader(fileStream))
                 {
                     jsonString = reader.ReadToEnd();

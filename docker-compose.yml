@@ -13,6 +13,8 @@ secrets:
     file: ~/files/cierge_nginx/fullchain.pem
   cierge_privkey.pem:
     file: ~/files/cierge_nginx/privkey.pem
+  cierge_rsa_signing_key.json:
+    file: ~/files/cierge/rsa_signing_key.json
 
 services:
   cierge:
@@ -21,6 +23,10 @@ services:
       dockerfile: Dockerfile
     expose:
       - 5000
+    secrets:
+      - cierge_rsa_signing_key.json
+    volumes:
+      - ~/files/cierge/appsettings.json:/app/cierge/appsettings.json
     depends_on:
       - db
   db:
