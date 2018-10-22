@@ -9,10 +9,6 @@ secrets:
     file: ~/files/postgres/pg_pwd_file.txt
   pg_user_file:
     file: ~/files/postgres/pg_user_file.txt
-  cierge_fullchain.pem:
-    file: ~/files/cierge_nginx/fullchain.pem
-  cierge_privkey.pem:
-    file: ~/files/cierge_nginx/privkey.pem
   cierge_rsa_signing_key.json:
     file: ~/files/cierge/rsa_signing_key.json
 
@@ -29,6 +25,9 @@ services:
       - ~/files/cierge/appsettings.json:/app/appsettings.json
     depends_on:
       - db
+    environment:
+      VIRTUAL_HOST: ${CiergeHost}
+
   db:
     image: postgres:11
     environment:
@@ -42,15 +41,14 @@ services:
     secrets:
       - pg_user_file
       - pg_pwd_file
-  nginx:
-    image: nginx:1.15
-    volumes:
-      - ~/Cierge/nginx.conf:/etc/nginx/nginx.conf
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy:alpine
     ports:
       - 80:80
       - 443:443
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /etc/nginx/certs:/etc/nginx/certs:ro
     links:
       - cierge
-    secrets:
-      - cierge_fullchain.pem
-      - cierge_privkey.pem
