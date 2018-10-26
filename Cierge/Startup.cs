@@ -167,6 +167,9 @@ namespace Cierge
             services.ConfigureApplicationCookie(options =>
             {
                 options.Cookie.SameSite = SameSiteMode.None;
+	            var cookieName = Configuration["Cierge:CookieName"];
+	            if (!String.IsNullOrEmpty(cookieName))
+		            options.Cookie.Name = cookieName;
             });
         }
 
