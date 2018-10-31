@@ -81,6 +81,12 @@ namespace Cierge
 	    private static async Task AddOpenIddictClients(CancellationToken cancellationToken, IServiceProvider serviceProvider)
 	    {
 		    var iddictManager = serviceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
+		    foreach (var client in await iddictManager.ListAsync(100, 0, cancellationToken))
+		    {
+			    await iddictManager.DeleteAsync(client, cancellationToken);
+		    }
+
+
 		    var oidClients = serviceProvider.GetRequiredService<IOptions<List<OIDCOption>>>().Value;
 		    foreach (var oidClient in oidClients)
 		    {
