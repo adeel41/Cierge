@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using Cierge.Options;
 using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Cierge
@@ -36,6 +38,9 @@ namespace Cierge
 
         public void ConfigureServices(IServiceCollection services)
         {
+	        services.Configure<CiergeOption>(Configuration.GetSection("Cierge"));
+	        services.Configure<List<OIDCOption>>(Configuration.GetSection("OIDClients"));
+
             // Disabling HTTPS requirement is default since it is assumed that
             // this is running behind a reverse proxy that requires HTTPS
             var requireHttps = !String.IsNullOrWhiteSpace(Configuration["RequireHttps"]) && Boolean.Parse(Configuration["RequireHttps"]) == true;
