@@ -12,8 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenIddict.Abstractions;
 using OpenIddict.Core;
-using OpenIddict.Models;
+using OpenIddict.EntityFrameworkCore.Models;
 
 namespace Cierge
 {
@@ -98,6 +99,15 @@ namespace Cierge
 					    DisplayName = oidClient.DisplayName,
 					    PostLogoutRedirectUris = {new Uri(oidClient.PostLogoutRedirectUri)},
 					    RedirectUris = {new Uri(oidClient.RedirectUri)},
+                        Permissions =
+                        {
+                            OpenIddictConstants.Permissions.Endpoints.Authorization,
+                            OpenIddictConstants.Permissions.GrantTypes.Implicit,
+                            OpenIddictConstants.Permissions.Scopes.Roles,
+                            OpenIddictConstants.Permissions.Scopes.Email,
+                            OpenIddictConstants.Permissions.Scopes.Profile,
+                            OpenIddictConstants.Scopes.OpenId
+                        }
 				    };
 
 				    await iddictManager.CreateAsync(descriptor, cancellationToken);
