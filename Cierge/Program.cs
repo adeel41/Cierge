@@ -1,17 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cierge.Data;
+using Cierge.Options;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OpenIddict.Abstractions;
 using OpenIddict.Core;
-using OpenIddict.Models;
+using OpenIddict.EntityFrameworkCore.Models;
 
 namespace Cierge
 {
@@ -55,25 +58,16 @@ namespace Cierge
         {
             using (var scope = services.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
-                await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync(cancellationToken);
+	            var ciergeOption = scope.ServiceProvider.GetRequiredService<IOptions<CiergeOption>>().Value;
+	            if (!ciergeOption.InMemoryDb)
+		            await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database
+			            .MigrateAsync(cancellationToken);
 
                 // Add OpenIddict clients
-                var iddictManager = scope.ServiceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
-                if (await iddictManager.FindByClientIdAsync("client-app", cancellationToken) == null)
-                {
-                    var descriptor = new OpenIddictApplicationDescriptor
-                    {
-                        ClientId = "client-app",
-                        DisplayName = "Test Client App",
-                        PostLogoutRedirectUris = { new Uri("http://localhost:8000/signout-oidc") },
-                        RedirectUris = { new Uri("http://localhost:8000/signin-oidc") },
-                    };
+                await AddOpenIddictClients(cancellationToken, scope.ServiceProvider);
 
-                    await iddictManager.CreateAsync(descriptor, cancellationToken);
-                }
-
-                // Create roles
-                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+	            // Create roles
+				var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
                 string[] roleNames = { "Administrator" };
                 foreach (var roleName in roleNames)
                 {
@@ -84,6 +78,41 @@ namespace Cierge
                 }
             }
         }
-        
+
+	    private static async Task AddOpenIddictClients(CancellationToken cancellationToken, IServiceProvider serviceProvider)
+	    {
+		    var iddictManager = serviceProvider.GetRequiredService<OpenIddictApplicationManager<OpenIddictApplication>>();
+		    foreach (var client in await iddictManager.ListAsync(100, 0, cancellationToken))
+		    {
+			    await iddictManager.DeleteAsync(client, cancellationToken);
+		    }
+
+
+		    var oidClients = serviceProvider.GetRequiredService<IOptions<List<OIDCOption>>>().Value;
+		    foreach (var oidClient in oidClients)
+		    {
+			    if (await iddictManager.FindByClientIdAsync(oidClient.ClientId, cancellationToken) == null)
+			    {
+				    var descriptor = new OpenIddictApplicationDescriptor
+				    {
+					    ClientId = oidClient.ClientId,
+					    DisplayName = oidClient.DisplayName,
+					    PostLogoutRedirectUris = {new Uri(oidClient.PostLogoutRedirectUri)},
+					    RedirectUris = {new Uri(oidClient.RedirectUri)},
+                        Permissions =
+                        {
+                            OpenIddictConstants.Permissions.Endpoints.Authorization,
+                            OpenIddictConstants.Permissions.GrantTypes.Implicit,
+                            OpenIddictConstants.Permissions.Scopes.Roles,
+                            OpenIddictConstants.Permissions.Scopes.Email,
+                            OpenIddictConstants.Permissions.Scopes.Profile,
+                            OpenIddictConstants.Scopes.OpenId
+                        }
+				    };
+
+				    await iddictManager.CreateAsync(descriptor, cancellationToken);
+			    }
+		    }
+	    }
     }
 }

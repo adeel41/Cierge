@@ -8,11 +8,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using OpenIddict.Core;
 using Microsoft.Extensions.Configuration;
 using Cierge.Services;
 using Cierge.Data;
 using System.Security.Claims;
+using OpenIddict.Abstractions;
 
 /*
  *  This code is adapted from OpenIddict, which is licensed under Apache 2.0 

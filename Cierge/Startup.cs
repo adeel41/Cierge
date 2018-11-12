@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +18,9 @@ using System.IO;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
+using Cierge.Options;
 using Microsoft.AspNetCore.HttpOverrides;
+using OpenIddict.Abstractions;
 
 namespace Cierge
 {
@@ -36,6 +39,9 @@ namespace Cierge
 
         public void ConfigureServices(IServiceCollection services)
         {
+	        services.Configure<CiergeOption>(Configuration.GetSection("Cierge"));
+	        services.Configure<List<OIDCOption>>(Configuration.GetSection("OIDClients"));
+
             // Disabling HTTPS requirement is default since it is assumed that
             // this is running behind a reverse proxy that requires HTTPS
             var requireHttps = !String.IsNullOrWhiteSpace(Configuration["RequireHttps"]) && Boolean.Parse(Configuration["RequireHttps"]) == true;
@@ -86,31 +92,39 @@ namespace Cierge
                 options.ClaimsIdentity.RoleClaimType = OpenIdConnectConstants.Claims.Role;
             });
 
-            services.AddOpenIddict(options =>
-            {
-                options.AddEntityFrameworkCoreStores<ApplicationDbContext>();
-                options.AddMvcBinders();
-                options.EnableAuthorizationEndpoint("/connect/authorize")
-                       .EnableLogoutEndpoint("/connect/logout")
-                       .EnableIntrospectionEndpoint("/connect/introspect")
-                       .EnableUserinfoEndpoint("/api/userinfo");
-                options.AllowImplicitFlow();
+            services.AddOpenIddict()
+                .AddCore(options => options.UseEntityFrameworkCore().UseDbContext<ApplicationDbContext>())
+                .AddServer(options =>
+                {
+                    options.UseMvc();
+                    options.EnableAuthorizationEndpoint("/connect/authorize")
+                        .EnableLogoutEndpoint("/connect/logout")
+                        .EnableIntrospectionEndpoint("/connect/introspect")
+                        .EnableUserinfoEndpoint("/api/userinfo");
 
-                options.SetAccessTokenLifetime(new TimeSpan(1, 0, 0));
+                    options.RegisterScopes(OpenIddictConstants.Scopes.Email,
+                        OpenIddictConstants.Scopes.OpenId,
+                        OpenIddictConstants.Scopes.Profile,
+                        OpenIddictConstants.Scopes.Roles);
 
-                if (!String.IsNullOrWhiteSpace(issuer))
-                    options.SetIssuer(new Uri(issuer));
+                    options.AllowImplicitFlow();
 
-                if (!requireHttps)
-                    options.DisableHttpsRequirement();
+                    options.SetAccessTokenLifetime(new TimeSpan(1, 0, 0));
 
-                if (Env.IsDevelopment())
-                    options.AddEphemeralSigningKey();
-                else
-                    options.AddSigningKey(SigningKey);
+                    if (!String.IsNullOrWhiteSpace(issuer))
+                        options.SetIssuer(new Uri(issuer));
 
-                options.UseJsonWebTokens();
-            });
+                    if (!requireHttps)
+                        options.DisableHttpsRequirement();
+
+                    if (Env.IsDevelopment())
+                        options.AddEphemeralSigningKey();
+                    else
+                        options.AddSigningKey(SigningKey);
+
+                    options.UseJsonWebTokens();
+
+                });
 
             services.AddCors(options =>
             {
