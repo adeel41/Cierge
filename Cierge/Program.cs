@@ -89,7 +89,12 @@ namespace Cierge
 
 
 		    var oidClients = serviceProvider.GetRequiredService<IOptions<List<OIDCOption>>>().Value;
-		    foreach (var oidClient in oidClients)
+	        foreach (var item in await iddictManager.ListAsync(cancellationToken: cancellationToken))
+	        {
+	            await iddictManager.DeleteAsync(item, cancellationToken);
+	        }
+
+                foreach (var oidClient in oidClients)
 		    {
 			    if (await iddictManager.FindByClientIdAsync(oidClient.ClientId, cancellationToken) == null)
 			    {
